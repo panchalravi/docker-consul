@@ -1,0 +1,76 @@
+services:
+  consul-server-1:
+    image: hashicorp/consul-enterprise:latest
+    container_name: consul-server-1
+    ports:
+      - "8500:8500"
+    entrypoint: >
+      /bin/sh -c /config/setup-consul-server.sh
+    volumes:
+      - ./config:/config
+    environment:
+      - SERVER_NUMBER=1
+      - DATACENTER=dc1
+      - BOOTSTRAP_EXPECT=3
+      - ZONE=z1
+  consul-server-2:
+    image: hashicorp/consul-enterprise:latest
+    container_name: consul-server-2
+    entrypoint: >
+      /bin/sh -c /config/setup-consul-server.sh
+    volumes:
+      - ./config:/config
+    environment:
+      - SERVER_NUMBER=2
+      - DATACENTER=dc1
+      - BOOTSTRAP_EXPECT=3
+      - ZONE=z1
+  consul-server-3:
+    image: hashicorp/consul-enterprise:latest
+    container_name: consul-server-3
+    entrypoint: >
+      /bin/sh -c /config/setup-consul-server.sh
+    volumes:
+      - ./config:/config
+    environment:
+      - SERVER_NUMBER=3
+      - DATACENTER=dc1
+      - BOOTSTRAP_EXPECT=3
+      - ZONE=z2
+  consul-server-4:
+    image: hashicorp/consul-enterprise:latest
+    container_name: consul-server-4
+    entrypoint: >
+      /bin/sh -c /config/setup-consul-server.sh
+    volumes:
+      - ./config:/config
+    environment:
+      - SERVER_NUMBER=4
+      - DATACENTER=dc1
+      - BOOTSTRAP_EXPECT=3
+      - ZONE=z2
+  consul-server-5:
+    image: hashicorp/consul-enterprise:latest
+    container_name: consul-server-5
+    entrypoint: >
+      /bin/sh -c /config/setup-consul-server.sh
+    volumes:
+      - ./config:/config
+    environment:
+      - SERVER_NUMBER=5
+      - DATACENTER=dc1
+      - BOOTSTRAP_EXPECT=3
+      - ZONE=z3
+  consul-server-6:
+    image: hashicorp/consul-enterprise:latest
+    container_name: consul-server-6
+    entrypoint: >
+      /bin/sh -c /config/setup-consul-server.sh
+    volumes:
+      - ./config:/config
+    environment:
+      - SERVER_NUMBER=6
+      - DATACENTER=dc1
+      - BOOTSTRAP_EXPECT=3
+      - ZONE=z3
+

@@ -1,0 +1,75 @@
+services:
+  mesh_gw_client_dc1:
+    image: panchalravi/consul-envoy:latest
+    container_name: mesh-gw-client-dc1
+    depends_on:
+      consul-server-dc1:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8500/v1/agent/self"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    environment:
+      - DATACENTER=dc1
+      - NODE_NAME=mesh-gw
+      - CONSUL_SERVERS=consul-server-dc1
+      - LICENSE=${CONSUL_LICENSE}
+    entrypoint: >
+      /bin/sh -c /config/setup-consul-client.sh
+    volumes:
+      - ./config:/config
+    networks:
+      dc1:
+        interface_name: eth0
+      dc2:
+        interface_name: eth1
+  mesh_gw_proxy_dc1:
+    image: panchalravi/consul-envoy:latest
+    container_name: mesh-gw-proxy-dc1
+    depends_on:
+      mesh_gw_client_dc1:
+        condition: service_healthy
+    environment:
+      - CONSUL_HTTP_ADDR=localhost:8500
+      - CONSUL_GRPC_ADDR=localhost:8502
+    command: >
+      /bin/sh -c "consul connect envoy -gateway mesh -register -service mesh-gateway"
+    network_mode: "service:mesh_gw_client_dc1"
+  mesh_gw_client_dc2:
+    image: panchalravi/consul-envoy:latest
+    container_name: mesh-gw-client-dc2
+    depends_on:
+      consul-server-dc2:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8500/v1/agent/self"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    environment:
+      - DATACENTER=dc2
+      - NODE_NAME=mesh-gw
+      - CONSUL_SERVERS=consul-server-dc2
+      - LICENSE=${CONSUL_LICENSE}
+    entrypoint: >
+      /bin/sh -c /config/setup-consul-client.sh
+    volumes:
+      - ./config:/config
+    networks:
+      dc2:
+        interface_name: eth0
+      dc1:
+        interface_name: eth1
+  mesh_gw_proxy_dc2:
+    image: panchalravi/consul-envoy:latest
+    container_name: mesh-gw-proxy-dc2
+    depends_on:
+      mesh_gw_client_dc2:
+        condition: service_healthy
+    environment:
+      - CONSUL_HTTP_ADDR=localhost:8500
+      - CONSUL_GRPC_ADDR=localhost:8502
+    command: >
+      /bin/sh -c "consul connect envoy -gateway mesh -register -service mesh-gateway"
+    network_mode: "service:mesh_gw_client_dc2"

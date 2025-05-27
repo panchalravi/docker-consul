@@ -1,0 +1,50 @@
+services:
+  web:
+    image: nicholasjackson/fake-service:v0.26.2
+    container_name: web
+    environment:
+      LISTEN_ADDR: 127.0.0.1:9092
+      UPSTREAM_URIS: http://localhost:8181
+      MESSAGE: "web"
+      NAME: "web"
+      SERVER_TYPE: "http"
+    networks:
+      default:
+        interface_name: eth0
+      server:
+        interface_name: eth1
+  web_client:
+    image: panchalravi/consul-envoy:latest
+    container_name: web-client
+    depends_on:
+      consul-server-dc1:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8500/v1/agent/service/web-sidecar-proxy"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    environment:
+      - DATACENTER=dc1
+      - PARTITION=default
+      - NODE_NAME=web-client
+      - CONSUL_SERVERS=${CONSUL_SERVER_IP}
+      - LICENSE=${CONSUL_LICENSE}
+      - SERVICE_CONFIG_FILE=/service_config/web.hcl
+    entrypoint: >
+      /bin/sh -c /config/setup-consul-client.sh
+    volumes:
+      - ./config:/config
+      - ./service_config:/service_config
+    network_mode: "service:web"
+  web_proxy:
+    image: panchalravi/consul-envoy:latest
+    container_name: web-proxy
+    depends_on:
+      web_client:
+        condition: service_healthy
+    environment:
+      - CONSUL_HTTP_ADDR=localhost:8500
+      - CONSUL_GRPC_ADDR=localhost:8502
+    command: ["consul", "connect", "envoy","-sidecar-for", "web"]
+    network_mode: "service:web"

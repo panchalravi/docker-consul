@@ -1,0 +1,55 @@
+include:
+  - docker-compose-mgw.yml
+  - docker-compose-api.yml
+  - docker-compose-web.yml
+  - docker-compose-api-gateway.yml
+services:
+  consul-server-dc1:
+    image: hashicorp/consul-enterprise:latest
+    container_name: consul-server-dc1
+    ports:
+      - "8500:8500"
+    entrypoint: >
+      /bin/sh -c /config/setup-consul-server.sh
+    volumes:
+      - ./config:/config
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8500/v1/status/leader"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    environment:
+      - SERVER_NUMBER=1
+      - DATACENTER=dc1
+      - BOOTSTRAP_EXPECT=1
+      - NODE_NAME=consul-server-1
+      - LICENSE=${CONSUL_LICENSE}
+    networks:
+      dc1:
+  consul-server-dc2:
+    image: hashicorp/consul-enterprise:latest
+    container_name: consul-server-dc2
+    ports:
+      - "9500:8500"
+    entrypoint: >
+      /bin/sh -c /config/setup-consul-server.sh
+    volumes:
+      - ./config:/config
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8500/v1/status/leader"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    environment:
+      - SERVER_NUMBER=1
+      - DATACENTER=dc2
+      - BOOTSTRAP_EXPECT=1
+      - NODE_NAME=consul-server-1
+      - LICENSE=${CONSUL_LICENSE}
+    networks:
+      dc2:
+networks:
+  dc2:
+    driver: bridge
+  dc1:
+    driver: bridge

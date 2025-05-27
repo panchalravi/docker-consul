@@ -1,0 +1,80 @@
+services:
+  mesh_gw_client_default:
+    image: panchalravi/consul-envoy:latest
+    container_name: mesh-gw-client-default
+    depends_on:
+      consul-server-dc1:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8500/v1/agent/self"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    environment:
+      - DATACENTER=dc1
+      - NODE_NAME=mesh-gw-default
+      - CONSUL_SERVERS=${CONSUL_SERVER_IP}
+      - LICENSE=${CONSUL_LICENSE}
+    entrypoint: >
+      /bin/sh -c /config/setup-consul-client.sh
+    volumes:
+      - ./config:/config
+    networks:
+      default:
+        interface_name: eth0
+      finance:
+        interface_name: eth1
+      server:
+        interface_name: eth2
+  mesh_gw_proxy_default:
+    image: panchalravi/consul-envoy:latest
+    container_name: mesh-gw-proxy-default
+    depends_on:
+      mesh_gw_client_default:
+        condition: service_healthy
+    environment:
+      - CONSUL_HTTP_ADDR=localhost:8500
+      - CONSUL_GRPC_ADDR=localhost:8502
+    command: >
+      /bin/sh -c "consul connect envoy -gateway mesh -register -service mesh-gateway"
+    network_mode: "service:mesh_gw_client_default"
+  mesh_gw_client_finance:
+    image: panchalravi/consul-envoy:latest
+    container_name: mesh-gw-client-finance
+    depends_on:
+      consul-server-dc1:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8500/v1/agent/self"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    environment:
+      - DATACENTER=dc1
+      - NODE_NAME=mesh-gw-finance
+      - PARTITION=finance
+      - CONSUL_SERVERS=${CONSUL_SERVER_IP}
+      - LICENSE=${CONSUL_LICENSE}
+    entrypoint: >
+      /bin/sh -c /config/setup-consul-client.sh
+    volumes:
+      - ./config:/config
+    networks:
+      finance:
+        interface_name: eth0
+      default:
+        interface_name: eth1
+      server:
+        interface_name: eth2
+  mesh_gw_proxy_finance:
+    image: panchalravi/consul-envoy:latest
+    container_name: mesh-gw-proxy-finance
+    depends_on:
+      mesh_gw_client_finance:
+        condition: service_healthy
+    environment:
+      - CONSUL_HTTP_ADDR=localhost:8500
+      - CONSUL_GRPC_ADDR=localhost:8502
+    command: >
+      /bin/sh -c "consul connect envoy -gateway mesh -register -service mesh-gateway"
+    network_mode: "service:mesh_gw_client_finance"

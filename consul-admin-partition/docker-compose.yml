@@ -1,0 +1,49 @@
+include:
+  - docker-compose-api-finance-ap.yml
+  - docker-compose-web-default-ap.yml
+  - docker-compose-mgw.yml
+  - docker-compose-api-gateway.yml
+services:
+  consul-server-dc1:
+    image: hashicorp/consul-enterprise:latest
+    container_name: consul-server-dc1
+    ports:
+      - "8500:8500"
+    entrypoint: >
+      /bin/sh -c /config/setup-consul-server.sh
+    volumes:
+      - ./config:/config
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8500/v1/status/leader"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    environment:
+      - DATACENTER=dc1
+      - BOOTSTRAP_EXPECT=1
+      - NODE_NAME=consul-server-1
+      - LICENSE=${CONSUL_LICENSE}
+    networks:
+      server:
+        interface_name: eth0
+        ipv4_address: ${CONSUL_SERVER_IP}
+      default:
+        interface_name: eth1
+      finance:
+        interface_name: eth2
+networks:
+  server:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.0.1.0/24
+  default:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.0.2.0/24
+  finance:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.0.3.0/24
