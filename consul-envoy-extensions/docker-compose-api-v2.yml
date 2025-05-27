@@ -1,0 +1,43 @@
+services:
+  api_v2:
+    image: nicholasjackson/fake-service:v0.26.2
+    container_name: api-v2
+    environment:
+      LISTEN_ADDR: 127.0.0.1:9092
+      MESSAGE: "api-v2"
+      NAME: "api-v2"
+      SERVER_TYPE: "http"
+  api_v2_client:
+    image: panchalravi/consul-envoy:latest
+    container_name: api-v2-client
+    depends_on:
+      api_v2:
+        condition: service_started
+      consul-server-1:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8500/v1/agent/service/api-v2-sidecar-proxy"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    environment:
+      - DATACENTER=dc1
+      - NODE_NAME=api-v2
+      - SERVICE_CONFIG_FILE=/service_config/api-v2.hcl
+    entrypoint: >
+      /bin/sh -c /config/setup-consul-client.sh
+    volumes:
+      - ./config:/config
+      - ./service_config:/service_config
+    network_mode: "service:api_v2"
+  api_v2_proxy:
+    image: panchalravi/consul-envoy:latest
+    container_name: api-v2-proxy
+    depends_on:
+      api_v2_client:
+        condition: service_healthy
+    environment:
+      - CONSUL_HTTP_ADDR=localhost:8500
+      - CONSUL_GRPC_ADDR=localhost:8502
+    command: ["consul", "connect", "envoy","-sidecar-for", "api-v2"]
+    network_mode: "service:api_v2"
