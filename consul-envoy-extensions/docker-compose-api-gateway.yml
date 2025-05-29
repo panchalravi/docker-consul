@@ -1,6 +1,6 @@
 services:
   api_gw_client:
-    image: panchalravi/consul-envoy:latest
+    image: panchalravi/consul-envoy:${CONSUL_VERSION}
     container_name: api-gw-client
     ports:
       - "8080:8080"
@@ -15,12 +15,13 @@ services:
     environment:
       - DATACENTER=dc1
       - NODE_NAME=api-gw
+      - LICENSE=${CONSUL_LICENSE}
     entrypoint: >
       /bin/sh -c /config/setup-consul-client.sh
     volumes:
       - ./config:/config
   api_gw_proxy:
-    image: panchalravi/consul-envoy:latest
+    image: panchalravi/consul-envoy:${CONSUL_VERSION}
     container_name: api-gw-proxy
     depends_on:
       api_gw_client:

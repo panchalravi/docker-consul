@@ -8,7 +8,7 @@ services:
       NAME: "api-v2"
       SERVER_TYPE: "http"
   api_v2_client:
-    image: panchalravi/consul-envoy:latest
+    image: panchalravi/consul-envoy:${CONSUL_VERSION}
     container_name: api-v2-client
     depends_on:
       api_v2:
@@ -24,6 +24,7 @@ services:
       - DATACENTER=dc1
       - NODE_NAME=api-v2
       - SERVICE_CONFIG_FILE=/service_config/api-v2.hcl
+      - LICENSE=${CONSUL_LICENSE}
     entrypoint: >
       /bin/sh -c /config/setup-consul-client.sh
     volumes:
@@ -31,7 +32,7 @@ services:
       - ./service_config:/service_config
     network_mode: "service:api_v2"
   api_v2_proxy:
-    image: panchalravi/consul-envoy:latest
+    image: panchalravi/consul-envoy:${CONSUL_VERSION}
     container_name: api-v2-proxy
     depends_on:
       api_v2_client:

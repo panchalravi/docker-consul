@@ -5,7 +5,7 @@ include:
   - docker-compose-web.yml
 services:
   consul-server-1:
-    image: hashicorp/consul-enterprise:latest
+    image: hashicorp/consul-enterprise:${CONSUL_VERSION:-latest}
     container_name: consul-server-1
     ports:
       - "8500:8500"
@@ -23,6 +23,7 @@ services:
       - DATACENTER=dc1
       - BOOTSTRAP_EXPECT=1
       - NODE_NAME=consul-server-1
+      - LICENSE=${CONSUL_LICENSE}
   # consul-server-2:
   #   image: hashicorp/consul-enterprise:latest
   #   container_name: consul-server-2

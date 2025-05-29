@@ -2,7 +2,9 @@
 
 mkdir -p /etc/consul.d
 mkdir -p /opt/consul/data
-cp /config/license.hclic /etc/consul.d/license.hclic
+# Write the license key to a file
+echo $LICENSE > "/etc/consul.d/license.hclic"
+
 
 # Create Vault agent configuration file
 cat << EOF | tee "/etc/consul.d/consul.hcl" 
