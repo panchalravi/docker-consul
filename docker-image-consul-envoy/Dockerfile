@@ -3,7 +3,7 @@
 # These default values can be used by a Github Action to build images, if enabled.
 #
 ARG ENVOY_IMAGE=envoyproxy/envoy:v1.31-latest
-ARG CONSUL_IMAGE=hashicorp/consul-enterprise:1.21-ent
+ARG CONSUL_IMAGE=hashicorp/consul-enterprise:1.21.1-ent
 
 #
 ### END CONFIGURATION ###
