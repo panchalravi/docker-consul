@@ -1,0 +1,26 @@
+include:
+  - docker-compose-api-gateway.yml
+  - docker-compose-api.yml
+  - docker-compose-web.yml
+services:
+  consul-server-1:
+    image: hashicorp/consul-enterprise:${CONSUL_VERSION:-latest}
+    container_name: consul-server-1
+    ports:
+      - "8500:8500"
+    entrypoint: >
+      /bin/sh -c /config/setup-consul-server.sh
+    volumes:
+      - ./config:/config
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8500/v1/status/leader"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    environment:
+      - SERVER_NUMBER=1
+      - DATACENTER=dc1
+      - BOOTSTRAP_EXPECT=1
+      - NODE_NAME=consul-server-1
+      - LICENSE=${CONSUL_LICENSE}
+      - CONSUL_MANAGEMENT_TOKEN=${CONSUL_MANAGEMENT_TOKEN}

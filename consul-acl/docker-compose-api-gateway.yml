@@ -1,0 +1,42 @@
+services:
+  api_gw_client:
+    image: panchalravi/consul-envoy:${CONSUL_VERSION}
+    container_name: api-gw-client
+    ports:
+      - "8080:8080"
+    depends_on:
+      consul-server-1:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8500/v1/agent/self"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    environment:
+      - DATACENTER=dc1
+      - NODE_NAME=api-gateway
+      - SERVICE_NAME=gateway-api
+      - LICENSE=${CONSUL_LICENSE}
+      - GATEWAY_TYPE=api
+      - CONSUL_MANAGEMENT_TOKEN=${CONSUL_MANAGEMENT_TOKEN}
+    entrypoint: >
+      /bin/sh -c /config/setup-consul-client.sh
+    volumes:
+      - ./config:/config
+  api_gw_proxy:
+    image: panchalravi/consul-envoy:${CONSUL_VERSION}
+    container_name: api-gw-proxy
+    depends_on:
+      api_gw_client:
+        condition: service_healthy
+    environment:
+      - CONSUL_HTTP_ADDR=localhost:8500
+      - CONSUL_GRPC_ADDR=localhost:8502
+      - SERVICE_NAME=gateway-api
+      - GATEWAY_TYPE=api
+      - CONSUL_MANAGEMENT_TOKEN=${CONSUL_MANAGEMENT_TOKEN}
+    volumes:
+      - ./config:/config
+    entrypoint: >
+      /bin/sh -c "/config/setup-envoy.sh"
+    network_mode: "service:api_gw_client"

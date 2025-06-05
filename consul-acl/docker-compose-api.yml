@@ -1,0 +1,51 @@
+services:
+  api:
+    image: nicholasjackson/fake-service:v0.26.2
+    container_name: api
+    environment:
+      LISTEN_ADDR: 127.0.0.1:9092
+      MESSAGE: "api"
+      NAME: "api"
+      SERVER_TYPE: "http"
+  api_client:
+    image: panchalravi/consul-envoy:${CONSUL_VERSION}
+    container_name: api-client
+    depends_on:
+      api:
+        condition: service_started
+      consul-server-1:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8500/v1/agent/service/api-sidecar-proxy"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    environment:
+      - DATACENTER=dc1
+      - NODE_NAME=api
+      - SERVICE_NAME=api
+      - SERVICE_CONFIG_FILE=/service_config/api.hcl
+      - LICENSE=${CONSUL_LICENSE}
+      - CONSUL_MANAGEMENT_TOKEN=${CONSUL_MANAGEMENT_TOKEN}
+    entrypoint: >
+      /bin/sh -c /config/setup-consul-client.sh
+    volumes:
+      - ./config:/config
+      - ./service_config:/service_config
+    network_mode: "service:api"
+  api_proxy:
+    image: panchalravi/consul-envoy:${CONSUL_VERSION}
+    container_name: api-proxy
+    depends_on:
+      api_client:
+        condition: service_healthy
+    environment:
+      - CONSUL_HTTP_ADDR=localhost:8500
+      - CONSUL_GRPC_ADDR=localhost:8502
+      - SERVICE_NAME=api
+      - CONSUL_MANAGEMENT_TOKEN=${CONSUL_MANAGEMENT_TOKEN}
+    volumes:
+      - ./config:/config
+    entrypoint: >
+      /bin/sh -c /config/setup-envoy.sh
+    network_mode: "service:api"
